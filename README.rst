@@ -1,30 +1,20 @@
 Echo servers in some languages
 =================================
 
-いろんな言語＋フレームワークで echo server を書いてみました。
+Echo server in different languages + framework.
 
-いくつかのコードはサンプルプログラムにあったそのままのコードを書いていて、
-epoll, thread 版は自分で作成したものです。
-
-各 echo server の実装は全く同じものではないのであくまでも参考ですが、
-パフォーマンスはこんなかんじです。
+Some code is writing the original code that was in the sample program,
+epoll, thread version is created by methane (github.com/methane/echoserver).
 
 test environment
 -----------------
 
 client and server are connected by Gigabit Ethernet.
 
-client (sag14)
+server and client - one virtual computer
 ^^^^^^^^^^^^^^^
-Debian 5.0.4 (i386)
-Linux sag14 2.6.26.5 #2 SMP Mon Sep 29 14:17:40 JST 2008 i686 GNU/Linux
-Intel(R) Core(TM)2 CPU          6300  @ 1.86GHz (dual)
-
-server (sag15)
-^^^^^^^^^^^^^^^
-Debian 6.0.2 (amd64)
-Linux sag15 2.6.32-5-amd64 #1 SMP Mon Mar 7 21:35:22 UTC 2011 x86_64 GNU/Linux
-Intel(R) Core(TM)2 CPU          6300  @ 1.86GHz (dual)
+Lubuntu 18.04 (amd64)
+Intel(R) Core(TM) i-3 4000M 2 CPU 2.40 GHz
 
 test command
 -------------
@@ -33,7 +23,7 @@ bench.sh does kick client 3 times with following option.
 
 ::
 
-   ./client -c50 -o2 -h10000 sag15
+   ./client -c50 -o2 -h10000 127.0.0.1
 
 C++ epoll
 ---------
@@ -44,22 +34,19 @@ server::
 
 result::
 
-   Throughput: 117036.86 [#/sec]
-   Throughput: 118702.63 [#/sec]
-   Throughput: 119129.38 [#/sec]
+   Throughput: 32759.39 [#/sec]
+   Throughput: 31857.36 [#/sec]
+   Throughput: 30606.24 [#/sec]
 
-with forking.
-
-server::
+with forking server::
 
    ./server_epoll -f2
 
 result::
 
-   Throughput: 146602.29 [#/sec]
-   Throughput: 132542.38 [#/sec]
-   Throughput: 149737.19 [#/sec]
-
+   Throughput: 38289.52 [#/sec]
+   Throughput: 32920.54 [#/sec]
+   Throughput: 2130.14 [#/sec]
 
 C++ thread
 -----------
@@ -70,9 +57,9 @@ server::
 
 result::
 
-   Throughput: 122903.04 [#/sec]
-   Throughput: 121306.08 [#/sec]
-   Throughput: 122511.62 [#/sec]
+   Throughput: 37030.09 [#/sec]
+   Throughput: 36148.11 [#/sec]
+   Throughput: 38303.02 [#/sec]
 
 C++ libev
 -------------
@@ -84,18 +71,53 @@ server::
 result::
 
    $ sh bench.sh 
-   Throughput: 96757.33 [#/sec]
-   Throughput: 132618.52 [#/sec]
-   Throughput: 132365.60 [#/sec]
+   Throughput: 36378.17 [#/sec]
+   Throughput: 34321.19 [#/sec]
+   Throughput: 36602.43 [#/sec]
    $ sh bench.sh 
-   Throughput: 134189.84 [#/sec]
-   Throughput: 133924.71 [#/sec]
-   Throughput: 133706.54 [#/sec]
+   Throughput: 38684.08 [#/sec]
+   Throughput: 35297.25 [#/sec]
+   Throughput: 34895.54 [#/sec]
 
 libev have dynamic event queue size. So, first benchmark is slower than
 after.
+   
+Rust (1.24.1)
+----------
 
+server::
 
+   ./server_rust
+
+result::
+
+   Throughput: 37619.34 [#/sec]
+   Throughput: 20236.68 [#/sec]
+   Throughput: 15944.72 [#/sec]
+
+Go (1.10)
+-------
+
+server::
+
+   $ ./server_go
+
+result::
+
+   Throughput: 31057.19 [#/sec]
+   Throughput: 32425.42 [#/sec]
+   Throughput: 31929.84 [#/sec]
+
+server::
+
+   $ GOMAXPROCS=2 ./server_go
+
+result::
+
+   Throughput: 34154.67 [#/sec]
+   Throughput: 34288.68 [#/sec]
+   Throughput: 34541.08 [#/sec]
+   
 Haskell
 ----------
 
@@ -107,11 +129,10 @@ server::
 
 result::
 
-   Throughput: 80391.53 [#/sec]
-   Throughput: 82943.94 [#/sec]
-   Throughput: 76325.74 [#/sec]
-
-
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
+   
 Erlang
 -------------
 
@@ -126,58 +147,9 @@ server::
 
 result::
 
-   Throughput: 61698.85 [#/sec]
-   Throughput: 73994.04 [#/sec]
-   Throughput: 72668.51 [#/sec]
-
-
-Go (r59)
--------------
-
-server::
-
-   $ ./server_go
-
-result::
-
-   Throughput: 43505.17 [#/sec]
-   Throughput: 43346.11 [#/sec]
-   Throughput: 43198.26 [#/sec]
-
-server::
-
-   $ GOMAXPROCS=3 ./server_go
-
-result::
-
-   Throughput: 52087.16 [#/sec]
-   Throughput: 52070.02 [#/sec]
-   Throughput: 52068.27 [#/sec]
-
-
-Go (1)
--------
-
-server::
-
-   $ ./server_go
-
-result::
-
-   Throughput: 41161.18 [#/sec]
-   Throughput: 44335.79 [#/sec]
-   Throughput: 44368.17 [#/sec]
-
-server::
-
-   $ GOMAXPROCS=3 ./server_go
-
-result::
-
-   Throughput: 55872.09 [#/sec]
-   Throughput: 55857.82 [#/sec]
-   Throughput: 55949.57 [#/sec]
-
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
 
 pypy 1.6 + Tornado 2.0
 -----------------------
@@ -188,9 +160,9 @@ server::
 
 result::
 
-   Throughput: 79193.30 [#/sec]
-   Throughput: 81063.83 [#/sec]
-   Throughput: 81442.70 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
 
 
 pypy 1.8 + Tornado 2.2
@@ -202,9 +174,9 @@ server::
 
 result::
 
-   Throughput: 84852.55 [#/sec]
-   Throughput: 106760.88 [#/sec]
-   Throughput: 107032.43 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
 
 
 pypy 1.6 + twisted
@@ -216,9 +188,9 @@ server::
 
 result::
 
-   Throughput: 37630.81 [#/sec]
-   Throughput: 49274.60 [#/sec]
-   Throughput: 41053.66 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
 
 
 node.js  0.5.4
@@ -231,9 +203,9 @@ server::
 
 result::
 
-   Throughput: 34713.88 [#/sec]
-   Throughput: 35965.09 [#/sec]
-   Throughput: 36288.78 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
 
 
 
@@ -246,9 +218,9 @@ server::
 
 result::
 
-   Throughput: 74124.61 [#/sec]
-   Throughput: 73578.20 [#/sec]
-   Throughput: 75241.61 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
 
 
 
@@ -261,9 +233,9 @@ server::
 
 result::
 
-   Throughput: 32372.56 [#/sec]
-   Throughput: 32647.37 [#/sec]
-   Throughput: 32517.97 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
 
 
 
@@ -276,9 +248,9 @@ server::
 
 result::
 
-   Throughput: 59626.30 [#/sec]
-   Throughput: 50793.45 [#/sec]
-   Throughput: 51566.35 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
 
 
 Python 2.7.2 + gevent
@@ -290,15 +262,15 @@ server::
 
 result for gevent 0.13.6::
 
-   Throughput: 17751.24 [#/sec]
-   Throughput: 17607.05 [#/sec]
-   Throughput: 17537.34 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
 
 result for gevent 1.0a2::
 
-   Throughput: 19433.81 [#/sec]
-   Throughput: 19455.66 [#/sec]
-   Throughput: 19371.97 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
 
 
 gevent-1.0a2 without greenlet. Event driven fashion::
@@ -307,9 +279,9 @@ gevent-1.0a2 without greenlet. Event driven fashion::
 
 result::
 
-   Throughput: 62942.07 [#/sec]
-   Throughput: 63338.58 [#/sec]
-   Throughput: 62814.45 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
 
 
 
@@ -322,9 +294,9 @@ server::
 
 result::
 
-   Throughput: 14339.96 [#/sec]
-   Throughput: 13982.39 [#/sec]
-   Throughput: 13841.22 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
+   Throughput: 0 [#/sec]
 
 
 ..
