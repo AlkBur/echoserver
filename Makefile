@@ -20,6 +20,9 @@ null_server_thread: null_server_thread.cpp
 
 server_go: server_go.go
 	go build $<
+	
+server_rust: server_rust.rs
+	rustc $<	
 
 server_haskell: server_haskell.hs
 	ghc6 -threaded -O --make -o $@ $<
